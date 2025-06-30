@@ -1,0 +1,41 @@
+Script Bash para provisionamento automático de um servidor Apache
+
+
+#!/bin/bash
+
+# Atualizar repositórios e sistema
+echo "Atualizando pacotes do sistema..."
+apt-get update
+apt-get upgrade -y
+
+# Instalar Apache2
+echo "Instalando Apache2..."
+apt-get install apache2 -y
+
+# Instalar módulos essenciais
+echo "Instalando módulos adicionais..."
+apt-get install libapache2-mod-php -y
+apt-get install unzip -y
+
+# Configurar firewall (UFW)
+echo "Configurando firewall..."
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw enable
+
+# Baixar e configurar aplicação de exemplo
+echo "Configurando aplicação web de exemplo..."
+cd /tmp
+wget https://github.com/seu-repositorio/aplicacao-exemplo/archive/main.zip
+unzip main.zip
+cp -R aplicacao-exemplo-main/* /var/www/html/
+
+# Reiniciar Apache
+echo "Reiniciando Apache..."
+systemctl restart apache2
+
+# Verificar status
+echo "Verificando status do serviço..."
+systemctl status apache2
+
+echo "Provisionamento completo! Servidor web pronto em http://$(hostname -I)"
