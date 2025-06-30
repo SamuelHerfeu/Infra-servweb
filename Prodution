@@ -1,0 +1,47 @@
+Versão Otimizada (para produção)
+
+
+#!/bin/bash
+
+# Configurações
+WEB_ROOT="/var/www/html"
+APP_URL="https://github.com/seu-repositorio/aplicacao-exemplo/archive/main.zip"
+
+# Função para tratamento de erros
+handle_error() {
+    echo "Erro durante a execução: $1"
+    exit 1
+}
+
+# Execução principal
+main() {
+    # 1. Atualização do sistema
+    echo "▶ Atualizando sistema..."
+    apt-get update && apt-get upgrade -y || handle_error "Falha ao atualizar sistema"
+
+    # 2. Instalação do Apache
+    echo "▶ Instalando Apache..."
+    apt-get install -y apache2 libapache2-mod-php unzip || handle_error "Falha na instalação de pacotes"
+
+    # 3. Configuração de segurança
+    echo "▶ Configurando firewall..."
+    ufw allow "Apache Full" && ufw --force enable || handle_error "Falha na configuração do firewall"
+
+    # 4. Deploy da aplicação
+    echo "▶ Implementando aplicação..."
+    temp_dir=$(mktemp -d)
+    wget -q "$APP_URL" -O "$temp_dir/app.zip" || handle_error "Falha ao baixar aplicação"
+    unzip -q "$temp_dir/app.zip" -d "$temp_dir" || handle_error "Falha ao extrair aplicação"
+    rsync -a "$temp_dir"/*/ "$WEB_ROOT"/ || handle_error "Falha ao copiar arquivos"
+    chown -R www-data:www-data "$WEB_ROOT" || handle_error "Falha ao ajustar permissões"
+
+    # 5. Finalização
+    echo "▶ Reiniciando serviços..."
+    systemctl restart apache2 || handle_error "Falha ao reiniciar Apache"
+
+    # Verificação final
+    echo "✔ Provisionamento concluído com sucesso!"
+    echo "● Acesse: http://$(curl -s ifconfig.me)"
+}
+
+main
